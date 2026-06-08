@@ -12,9 +12,10 @@
   <meta name="apple-mobile-web-app-title" content="Grand Horizon" />
   <title>Grand Horizon · Master of Composure</title>
 
-  <link id="favicon" rel="icon" />
-  <link id="appleicon" rel="apple-touch-icon" />
-  <link id="manifest" rel="manifest" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
 
   <!-- Tailwind (Play CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -1007,37 +1008,12 @@
       }));
     });
 
-    // ---- inline PWA manifest + icons (single-file, no external assets) ----
-    (function () {
-      var ico = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
-        + "<rect width='64' height='64' rx='14' fill='%23020617'/>"
-        + "<circle cx='32' cy='39' r='9' fill='%23f59e0b'/>"
-        + "<path d='M8 45 H56' stroke='%23f59e0b' stroke-width='3' stroke-linecap='round'/>"
-        + "<path d='M15 53 H49' stroke='%23475569' stroke-width='2' stroke-linecap='round'/>"
-        + "</svg>";
-      var icoUri = 'data:image/svg+xml,' + ico;
-      var fav = document.getElementById('favicon');
-      var apple = document.getElementById('appleicon');
-      if (fav) fav.href = icoUri;
-      if (apple) apple.href = icoUri;
-      try {
-        var manifest = {
-          name: 'Grand Horizon: Master of Composure',
-          short_name: 'Grand Horizon',
-          description: 'A tactical psychological utility for strategic patience and emotional composure.',
-          display: 'standalone',
-          orientation: 'portrait',
-          background_color: '#020617',
-          theme_color: '#020617',
-          start_url: '.',
-          scope: '.',
-          icons: [{ src: icoUri, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
-        };
-        var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-        var link = document.getElementById('manifest');
-        if (link) link.href = URL.createObjectURL(blob);
-      } catch (e) {}
-    })();
+    // ---- register the service worker (installable + offline) on http(s) origins ----
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function () { /* offline support is best-effort */ });
+      });
+    }
   </script>
 
   <!-- Alpine plugins must load BEFORE Alpine core; both deferred to preserve order -->
