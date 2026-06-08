@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#020617" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Grand Horizon — a tactical psychological utility for the master of composure. Strategic patience in the spirit of Sima Yi and Gou Jian." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Grand Horizon" />
+  <title>Grand Horizon · Master of Composure</title>
+
+  <link id="favicon" rel="icon" />
+  <link id="appleicon" rel="apple-touch-icon" />
+  <link id="manifest" rel="manifest" />
+
+  <!-- Tailwind (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet" />
+
+  <style>
+    [x-cloak] { display: none !important; }
+    html, body { background-color: #020617; }
+    body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+    .app-bg {
+      background:
+        radial-gradient(1100px 560px at 50% -12%, rgba(245, 158, 11, 0.10), transparent 60%),
+        radial-gradient(760px 520px at 50% 112%, rgba(245, 158, 11, 0.05), transparent 60%),
+        #020617;
+    }
+    .grid-veil {
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px);
+      background-size: 34px 34px;
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent);
+      mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent);
+    }
+    .scanlines {
+      background-image: repeating-linear-gradient(180deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.13) 3px);
+    }
+
+    @keyframes breathe { 0%,100% { transform: scale(0.55); opacity: 0.40; } 50% { transform: scale(1); opacity: 0.95; } }
+    .breath-orb { animation: breathe 4.5s ease-in-out infinite; }
+
+    @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+    .cursor-blink { animation: blink 1s steps(1) infinite; }
+
+    @keyframes fadeup { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+    .fadeup { animation: fadeup 0.34s ease both; }
+    .tab-enter { animation: fadeup 0.30s ease both; }
+
+    @keyframes flashpulse { 0% { opacity: 0; } 14% { opacity: 0.55; } 100% { opacity: 0; } }
+    .flash { animation: flashpulse 0.72s ease forwards; }
+
+    @keyframes ringspin { to { transform: rotate(360deg); } }
+    .slow-spin { animation: ringspin 26s linear infinite; }
+
+    .clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* Keyboard focus visibility (WCAG 2.4.7) */
+    button:focus-visible, a:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid rgba(245, 158, 11, 0.85);
+      outline-offset: 2px;
+      border-radius: 8px;
+    }
+
+    /* Respect reduced-motion preference (WCAG 2.3.3) */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+      .breath-orb { transform: scale(0.85); opacity: 0.8; }
+    }
+
+    ::-webkit-scrollbar { width: 0px; height: 0px; }
+    * { -webkit-tap-highlight-color: transparent; }
+    textarea { resize: none; }
+  </style>
+</head>
+
+<body class="app-bg text-slate-200 font-sans antialiased selection:bg-amber-500/30">
+  <div class="grid-veil pointer-events-none fixed inset-0 -z-10"></div>
+
+  <div
+    x-data="grit"
+    x-init="init()"
+    x-cloak
+    class="relative mx-auto flex min-h-screen w-full max-w-md flex-col border-x border-slate-800/60 bg-slate-950/30 backdrop-blur-[2px]"
+  >
+    <!-- ===================== HEADER / MACRO-TIMELINE QUOTE ENGINE ===================== -->
+    <header :inert="pauseActive" class="sticky top-0 z-20 border-b border-slate-800/70 bg-slate-950/85 backdrop-blur-md">
+      <div class="space-y-3 px-4 pb-3 pt-3" style="padding-top: max(0.75rem, env(safe-area-inset-top));">
+        <!-- brand + rank -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="relative h-7 w-7">
+              <div class="slow-spin absolute inset-0 rounded-full border border-amber-500/30"></div>
+              <div class="absolute inset-1.5 rounded-full bg-amber-500/15"></div>
+              <div class="absolute inset-[11px] rounded-full bg-amber-400"></div>
+            </div>
+            <div>
+              <div class="font-mono text-[11px] font-semibold tracking-[0.24em] text-amber-500">GRAND HORIZON</div>
+              <div class="font-mono text-[9px] tracking-[0.3em] text-slate-400">MASTER OF COMPOSURE</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-mono text-[9px] tracking-[0.2em] text-slate-500">RANK <span x-text="rank.level"></span></div>
+            <div class="text-xs font-semibold text-amber-400" x-text="rank.title"></div>
+          </div>
+        </div>
+
+        <!-- rotating strategic quote -->
+        <button @click="nextQuote()" class="group block w-full text-left" aria-label="Advance quote">
+          <div class="flex items-start gap-2">
+            <span class="select-none font-serif text-2xl leading-none text-amber-500/50">“</span>
+            <div class="min-w-0">
+              <p class="clamp-3 font-serif text-[15px] italic leading-snug text-slate-300" x-text="quotes[quoteIndex].t"></p>
+              <p class="mt-1 font-mono text-[9px] tracking-[0.18em] text-slate-400">
+                — <span class="text-slate-300" x-text="quotes[quoteIndex].a"></span>
+                <span class="text-slate-500 transition group-hover:text-amber-400"> · TAP TO ADVANCE</span>
+              </p>
+            </div>
+          </div>
+        </button>
+
+        <!-- stat bar -->
+        <div>
+          <div class="mb-1.5 flex items-center justify-between font-mono text-[11px]">
+            <span class="text-slate-400">SOVEREIGNTY <span class="font-semibold tabular-nums text-amber-400" x-text="egoPoints"></span></span>
+            <span class="text-slate-400">
+              <span class="text-amber-500">◆</span>
+              <span class="font-semibold tabular-nums text-amber-400" x-text="streak"></span>-DAY VOW
+            </span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+            <div class="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-500" :style="`width:${rank.pct}%`"></div>
+          </div>
+          <div class="mt-1 flex justify-between font-mono text-[9px] tracking-wide text-slate-500">
+            <span x-text="rank.title.toUpperCase()"></span>
+            <span><span class="tabular-nums" x-text="rank.into"></span>/<span class="tabular-nums" x-text="rank.need"></span> → RANK <span x-text="rank.level + 1"></span></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===================== MAIN ===================== -->
+    <main :inert="pauseActive" class="flex-1 px-4 pb-28 pt-5">
+
+      <!-- ============ TAB: COMPOSURE / TACTICAL PAUSE ENGINE ============ -->
+      <section x-show="activeTab === 'pause'" class="tab-enter space-y-5">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-center shadow-[0_0_40px_-12px_rgba(245,158,11,0.18)]">
+          <div class="font-mono text-[10px] tracking-[0.3em] text-amber-500/80">TACTICAL PAUSE ENGINE</div>
+          <h2 class="mt-2 text-xl font-semibold tracking-tight text-slate-100">The 10-Second Buffer</h2>
+          <p class="mx-auto mt-2 max-w-[18rem] text-[13px] leading-relaxed text-slate-400">
+            Between provocation and response lies a kingdom. Hold it for ten seconds — and it is yours.
+          </p>
+
+          <!-- preview ring -->
+          <div class="my-5 flex items-center justify-center">
+            <div class="relative flex h-28 w-28 items-center justify-center">
+              <div class="absolute inset-0 rounded-full border border-slate-800"></div>
+              <div class="absolute inset-3 rounded-full bg-amber-500/5"></div>
+              <svg viewBox="0 0 48 48" class="absolute inset-0 h-full w-full">
+                <circle cx="24" cy="24" r="20" fill="none" stroke="#f59e0b" stroke-width="0.75" stroke-dasharray="2 5" class="opacity-50" />
+              </svg>
+              <span class="font-mono text-3xl font-bold tabular-nums text-amber-400">10</span>
+            </div>
+          </div>
+
+          <button
+            @click="startPause()"
+            :disabled="pauseActive"
+            class="w-full rounded-xl bg-amber-500 py-3.5 text-sm font-bold uppercase tracking-wider text-slate-950 shadow-lg shadow-amber-500/20 transition-all duration-300 hover:bg-amber-400 active:scale-95 disabled:opacity-40"
+          >
+            Initiate Pause &nbsp;·&nbsp; +25
+          </button>
+          <div class="mt-3 font-mono text-[11px] text-slate-500">
+            PAUSES HELD: <span class="tabular-nums text-slate-300" x-text="pausesCompleted"></span>
+          </div>
+        </div>
+
+        <!-- doctrine cards -->
+        <div class="space-y-3">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+            <div class="font-mono text-[10px] tracking-[0.2em] text-amber-500/70">THE SIMA YI DOCTRINE</div>
+            <p class="mt-1.5 text-[13px] leading-relaxed text-slate-400">
+              Outlast. The patient strategist does not need to win every exchange — only the last one. Provocation is an invitation you are free to decline.
+            </p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+            <div class="font-mono text-[10px] tracking-[0.2em] text-amber-500/70">THE GOU JIAN VOW</div>
+            <p class="mt-1.5 text-[13px] leading-relaxed text-slate-400">
+              Endure the bitter to inherit the sweet. Humiliation swallowed in silence does not weaken you — it compounds, quietly, into resolve.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TAB: ALCHEMY OF EGO ============ -->
+      <section x-show="activeTab === 'alchemy'" class="tab-enter space-y-4">
+        <div class="text-center">
+          <div class="font-mono text-[10px] tracking-[0.3em] text-amber-500/80">THE ALCHEMY OF EGO</div>
+          <h2 class="mt-1.5 text-xl font-semibold tracking-tight text-slate-100">Detachment Transformer</h2>
+          <p class="mx-auto mt-1.5 max-w-[19rem] text-[13px] leading-relaxed text-slate-400">
+            Feed the wound to the machine. It returns cold, clinical strategy — the emotion stripped, the geometry exposed.
+          </p>
+        </div>
+
+        <div>
+          <label for="alchemy-input" class="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-slate-400">THE TRIGGER</label>
+          <textarea
+            id="alchemy-input"
+            x-model="alchemyInput"
+            :disabled="terminalRunning"
+            rows="4"
+            maxlength="1200"
+            placeholder="Name the trigger. The slight, the message, the boss who passed you over, the friend who went cold…"
+            class="w-full rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 text-[13px] leading-relaxed text-slate-200 placeholder:text-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30 disabled:opacity-50"
+          ></textarea>
+        </div>
+
+        <div class="flex gap-2">
+          <button
+            @click="runAlchemy()"
+            :disabled="terminalRunning || !alchemyInput.trim()"
+            class="flex-1 rounded-xl bg-amber-500 py-3 text-sm font-bold uppercase tracking-wider text-slate-950 transition-all duration-300 hover:bg-amber-400 active:scale-95 disabled:opacity-40"
+          >
+            <span x-show="!terminalRunning">Transmute</span>
+            <span x-show="terminalRunning" class="font-mono normal-case tracking-normal">processing…</span>
+          </button>
+          <button
+            @click="clearAlchemy()"
+            class="rounded-xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-slate-600 hover:text-slate-200"
+          >
+            Clear
+          </button>
+        </div>
+
+        <!-- terminal -->
+        <div
+          x-show="terminalLines.length || terminalRunning"
+          class="scanlines overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-4 shadow-inner"
+        >
+          <div class="mb-3 flex items-center gap-1.5 border-b border-slate-800/70 pb-2.5">
+            <span class="h-2.5 w-2.5 rounded-full bg-red-500/60"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-amber-500/60"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-500/60"></span>
+            <span class="ml-2 font-mono text-[10px] tracking-wide text-slate-500">detachment.protocol — secure shell</span>
+          </div>
+          <div class="font-mono text-[11px] leading-relaxed">
+            <template x-for="(line, idx) in terminalLines" :key="idx">
+              <div class="whitespace-pre-wrap break-words" :class="lineClass(line)" x-text="line || ' '"></div>
+            </template>
+            <span x-show="terminalRunning" class="cursor-blink text-amber-400">▋</span>
+          </div>
+        </div>
+
+        <!-- metrics -->
+        <div x-show="alchemyResult && !terminalRunning" class="fadeup grid grid-cols-2 gap-2">
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+            <div class="font-mono text-[9px] tracking-wide text-slate-500">VOLATILITY INDEX</div>
+            <div class="mt-0.5 font-mono text-sm font-semibold text-amber-400"><span x-text="alchemyResult?.vol"></span><span class="text-slate-500">/100</span></div>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+            <div class="font-mono text-[9px] tracking-wide text-slate-500">RESPONSE LATENCY</div>
+            <div class="mt-0.5 font-mono text-sm font-semibold text-amber-400" x-text="alchemyResult?.latency"></div>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+            <div class="font-mono text-[9px] tracking-wide text-slate-500">THREAT CLASS</div>
+            <div class="mt-0.5 font-mono text-[11px] font-semibold leading-tight text-slate-300" x-text="alchemyResult?.threat"></div>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+            <div class="font-mono text-[9px] tracking-wide text-slate-500">PROJECTED DECAY</div>
+            <div class="mt-0.5 font-mono text-[11px] font-semibold leading-tight text-slate-300"><span x-text="alchemyResult?.decayPct"></span>% / <span x-text="alchemyResult?.window"></span></div>
+          </div>
+        </div>
+
+        <button
+          x-show="alchemyResult && !terminalRunning && !alchemySealed"
+          @click="sealRecord()"
+          class="fadeup w-full rounded-xl border border-amber-500/40 bg-amber-500/10 py-3 text-sm font-semibold uppercase tracking-wider text-amber-400 transition hover:bg-amber-500/20 active:scale-95"
+        >
+          ⌖ Seal in the Long Record
+        </button>
+        <div x-show="alchemySealed" class="fadeup text-center font-mono text-[11px] tracking-wide text-amber-500/80">
+          ✓ SEALED — REVIEW IT IN THE ARCHIVE
+        </div>
+      </section>
+
+      <!-- ============ TAB: TRIALS / WO XIN CHANG DAN ============ -->
+      <section x-show="activeTab === 'trials'" class="tab-enter space-y-4">
+        <div class="text-center">
+          <div class="font-mono text-[10px] tracking-[0.3em] text-amber-500/80">臥薪嘗膽 · WO XIN CHANG DAN</div>
+          <h2 class="mt-1.5 text-xl font-semibold tracking-tight text-slate-100">Sleep on Brushwood, Taste the Gall</h2>
+          <p class="mx-auto mt-1.5 max-w-[19rem] text-[13px] leading-relaxed text-slate-400">
+            Gou Jian tasted bitter gall each day so he would never forget. Choose friction deliberately. Build the streak.
+          </p>
+        </div>
+
+        <!-- streak banner -->
+        <div class="grid grid-cols-3 gap-2">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-3 text-center">
+            <div class="font-mono text-2xl font-bold tabular-nums text-amber-400" x-text="streak"></div>
+            <div class="font-mono text-[9px] tracking-wide text-slate-500">DAY STREAK</div>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-3 text-center">
+            <div class="font-mono text-2xl font-bold tabular-nums text-slate-200" x-text="doneToday + '/' + challengeDefs.length"></div>
+            <div class="font-mono text-[9px] tracking-wide text-slate-500">TODAY</div>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-3 text-center">
+            <div class="font-mono text-2xl font-bold tabular-nums text-slate-200" x-text="bestStreak"></div>
+            <div class="font-mono text-[9px] tracking-wide text-slate-500">BEST</div>
+          </div>
+        </div>
+
+        <!-- challenge list -->
+        <div class="space-y-2.5">
+          <template x-for="c in challengeDefs" :key="c.id">
+            <button
+              @click="toggleChallenge(c.id)"
+              class="flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-200"
+              :class="isDone(c.id) ? 'border-amber-500/40 bg-amber-500/[0.07]' : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'"
+            >
+              <span
+                class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border text-[12px] font-bold transition-all"
+                :class="isDone(c.id) ? 'border-amber-500 bg-amber-500 text-slate-950' : 'border-slate-600 text-transparent'"
+              >✓</span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-center justify-between gap-2">
+                  <span class="text-[13.5px] font-semibold" :class="isDone(c.id) ? 'text-amber-300' : 'text-slate-200'" x-text="c.name"></span>
+                  <span class="flex-shrink-0 font-mono text-[10px] text-slate-500">+<span x-text="c.xp"></span></span>
+                </span>
+                <span class="mt-0.5 block text-[12px] leading-snug text-slate-400" x-text="c.desc"></span>
+              </span>
+            </button>
+          </template>
+        </div>
+      </section>
+
+      <!-- ============ TAB: ARCHIVE / HISTORICAL RETROSPECTIVE ============ -->
+      <section x-show="activeTab === 'archive'" class="tab-enter space-y-4">
+        <div class="text-center">
+          <div class="font-mono text-[10px] tracking-[0.3em] text-amber-500/80">HISTORICAL RETROSPECTIVE</div>
+          <h2 class="mt-1.5 text-xl font-semibold tracking-tight text-slate-100">The Long Record</h2>
+          <p class="mx-auto mt-1.5 max-w-[19rem] text-[13px] leading-relaxed text-slate-400">
+            Every charge you transmuted, stripped of its heat. Return here and watch how small the old storms have become.
+          </p>
+        </div>
+
+        <!-- empty state -->
+        <div x-show="!retrospective.length" class="rounded-xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center">
+          <div class="text-3xl opacity-30">⌖</div>
+          <p class="mt-3 text-[13px] text-slate-500">The record is empty.</p>
+          <p class="mt-1 text-[12px] text-slate-600">Transmute a trigger in <span class="text-amber-500/70">Alchemy</span> and seal it here.</p>
+        </div>
+
+        <!-- entries -->
+        <div class="space-y-3">
+          <template x-for="entry in archiveSorted" :key="entry.id">
+            <div class="fadeup rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+              <div class="flex items-center justify-between">
+                <span class="rounded-md px-2 py-0.5 font-mono text-[9px] font-semibold tracking-wide" :class="badgeClass(entry.key)" x-text="entry.label"></span>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-[9px] tracking-wide text-slate-500" x-text="daysAgoLabel(entry.date)"></span>
+                  <button @click="removeRecord(entry.id)" class="px-1.5 text-slate-500 transition hover:text-red-400" aria-label="Delete this record">✕</button>
+                </div>
+              </div>
+
+              <p class="mt-2.5 text-[13.5px] font-medium leading-snug text-slate-200" x-text="entry.summary"></p>
+
+              <div class="mt-2.5 flex items-center gap-3 font-mono text-[10px] text-slate-500">
+                <span>VOL <span class="text-amber-500/80" x-text="entry.vol"></span></span>
+                <span class="text-slate-700">|</span>
+                <span>LATENCY <span class="text-amber-500/80" x-text="entry.latency"></span></span>
+              </div>
+
+              <button @click="toggleRaw(entry.id)" class="mt-3 font-mono text-[10px] tracking-wide text-slate-400 transition hover:text-amber-400">
+                <span x-show="!openRaw[entry.id]">▸ VIEW ORIGINAL CHARGE</span>
+                <span x-show="openRaw[entry.id]">▾ HIDE ORIGINAL CHARGE</span>
+              </button>
+              <p x-show="openRaw[entry.id]" x-collapse class="mt-2 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-[12px] italic leading-relaxed text-slate-500" x-text="entry.raw"></p>
+
+              <div class="mt-3 border-t border-slate-800/70 pt-2.5">
+                <p class="text-[11.5px] italic leading-snug text-amber-500/70" x-text="perspective(entry.date)"></p>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <button
+          x-show="retrospective.length"
+          @click="purgeAll()"
+          class="w-full rounded-xl border border-slate-800 py-3 font-mono text-[10px] tracking-[0.2em] text-slate-500 transition hover:border-red-500/40 hover:text-red-400"
+        >
+          PURGE ALL RECORDS
+        </button>
+      </section>
+
+    </main>
+
+    <!-- ===================== BOTTOM NAV ===================== -->
+    <nav :inert="pauseActive" class="sticky bottom-0 z-20 border-t border-slate-800/70 bg-slate-950/90 backdrop-blur-md" style="padding-bottom: env(safe-area-inset-bottom);">
+      <div class="grid grid-cols-4">
+        <!-- Pause -->
+        <button @click="go('pause')" class="flex flex-col items-center gap-1 py-2.5 transition" :class="tabCls('pause')">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" /><line x1="10" y1="9" x2="10" y2="15" /><line x1="14" y1="9" x2="14" y2="15" />
+          </svg>
+          <span class="font-mono text-[9px] tracking-wide">PAUSE</span>
+        </button>
+        <!-- Alchemy -->
+        <button @click="go('alchemy')" class="flex flex-col items-center gap-1 py-2.5 transition" :class="tabCls('alchemy')">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3h6" /><path d="M10 3v6.5L5.5 17a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9.5V3" /><path d="M7.5 14h9" />
+          </svg>
+          <span class="font-mono text-[9px] tracking-wide">ALCHEMY</span>
+        </button>
+        <!-- Trials -->
+        <button @click="go('trials')" class="flex flex-col items-center gap-1 py-2.5 transition" :class="tabCls('trials')">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3c2 3 4 4 4 7a4 4 0 0 1-8 0c0-1 .5-2 1-2.5C9.5 9 12 7 12 3Z" /><path d="M9 16.5C9 19 10.3 21 12 21s3-2 3-4.5" />
+          </svg>
+          <span class="font-mono text-[9px] tracking-wide">TRIALS</span>
+        </button>
+        <!-- Archive -->
+        <button @click="go('archive')" class="flex flex-col items-center gap-1 py-2.5 transition" :class="tabCls('archive')">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" /><line x1="10" y1="12" x2="14" y2="12" />
+          </svg>
+          <span class="font-mono text-[9px] tracking-wide">ARCHIVE</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ===================== TACTICAL PAUSE OVERLAY ===================== -->
+    <div
+      x-show="pauseActive"
+      x-transition.opacity.duration.300ms
+      class="scanlines fixed inset-0 z-40 flex flex-col items-center justify-center bg-slate-950/96 backdrop-blur-xl"
+      style="display:none;"
+    >
+      <div class="font-mono text-[10px] tracking-[0.4em] text-amber-500/80">INPUT LOCKED · HOLD POSITION</div>
+
+      <div class="relative my-10 flex h-72 w-72 items-center justify-center">
+        <svg viewBox="0 0 120 120" class="absolute inset-0 h-full w-full -rotate-90">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="#1e293b" stroke-width="3" />
+          <circle
+            cx="60" cy="60" r="54" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"
+            :stroke-dasharray="circ" :stroke-dashoffset="circ * (1 - pauseProgress)"
+            style="transition: stroke-dashoffset 0.12s linear; filter: drop-shadow(0 0 6px rgba(245,158,11,0.5));"
+          />
+        </svg>
+        <div class="breath-orb absolute h-44 w-44 rounded-full" style="background: radial-gradient(circle, rgba(245,158,11,0.35), rgba(245,158,11,0.02) 70%);"></div>
+        <div class="relative text-center">
+          <div class="font-mono text-7xl font-bold tabular-nums text-amber-400" x-text="pauseRemaining"></div>
+          <div class="mt-1 font-mono text-[11px] tracking-[0.35em] text-slate-400" x-text="pausePhase.toUpperCase()"></div>
+        </div>
+      </div>
+
+      <p class="max-w-[16rem] text-center text-[13px] leading-relaxed text-slate-400">
+        Breathe with the horizon. The reaction you withhold becomes power you keep.
+      </p>
+      <button @click="cancelPause()" class="mt-6 rounded-lg px-5 py-3 font-mono text-[10px] tracking-[0.2em] text-slate-400 transition hover:bg-slate-800/50 hover:text-slate-200">
+        ABORT · FORFEIT POINTS
+      </button>
+    </div>
+
+    <!-- completion flash -->
+    <div x-show="pauseFlash" class="flash pointer-events-none fixed inset-0 z-50 bg-amber-400" style="display:none;"></div>
+
+    <!-- ===================== TOASTS ===================== -->
+    <div class="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-6">
+      <template x-for="t in toasts" :key="t.id">
+        <div class="fadeup pointer-events-auto rounded-lg border border-amber-500/30 bg-slate-900/95 px-4 py-2 text-center shadow-xl shadow-black/50 backdrop-blur">
+          <div class="text-[12.5px] font-semibold text-amber-400" x-text="t.msg"></div>
+          <div x-show="t.sub" class="font-mono text-[10px] tracking-wide text-slate-400" x-text="t.sub"></div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- ===================== APP LOGIC (registered before Alpine boots) ===================== -->
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('grit', () => ({
+        // ---------- persisted state ----------
+        egoPoints: Alpine.$persist(0).as('gh_points'),
+        streak: Alpine.$persist(0).as('gh_streak'),
+        bestStreak: Alpine.$persist(0).as('gh_best'),
+        lastActiveDay: Alpine.$persist(null).as('gh_lastday'),
+        done: Alpine.$persist({}).as('gh_done'),
+        retrospective: Alpine.$persist([]).as('gh_archive'),
+        pausesCompleted: Alpine.$persist(0).as('gh_pauses'),
+        quoteIndex: Alpine.$persist(0).as('gh_qidx'),
+        lastQuoteDay: Alpine.$persist(null).as('gh_qday'),
+        idSeq: Alpine.$persist(0).as('gh_seq'),
+
+        // ---------- transient UI state ----------
+        activeTab: 'pause',
+        today: '',
+        circ: 339.292, // 2 * PI * 54
+        pauseActive: false,
+        pauseProgress: 0,
+        pauseRemaining: 10,
+        pausePhase: 'Inhale',
+        pauseFlash: false,
+        alchemyInput: '',
+        terminalLines: [],
+        terminalRunning: false,
+        alchemyResult: null,
+        alchemySealed: false,
+        openRaw: {},
+        toasts: [],
+        _tid: 0,
+        _raf: null,
+        _typeT: null,
+        _actx: null,
+
+        // ---------- static content ----------
+        quotes: [
+          { t: 'The patient man waits while the impatient man defeats himself. To do nothing, deliberately, is the rarest discipline of all.', a: 'AFTER SIMA YI' },
+          { t: 'He who can endure ten years of silence will hold the field after the loud have exhausted themselves.', a: 'THE LONG GAME' },
+          { t: 'I tasted the bitter gall each morning so the comfort of the present could never blunt the memory of my purpose.', a: 'AFTER GOU JIAN' },
+          { t: 'Do not answer the storm. Stand still, and let it spend itself against the mountain you have decided to be.', a: 'COMPOSURE DOCTRINE' },
+          { t: 'The enemy hopes you will react. Your stillness is the one move he has not prepared for.', a: 'AFTER SUN TZU' },
+          { t: 'Sleep on brushwood. Comfort dulls the blade; hardship sharpens the man who chooses it.', a: 'WO XIN CHANG DAN' },
+          { t: 'A slight answered in haste outlives the slight by years. Withhold the reply and the offense dies alone.', a: 'THE LATENCY RULE' },
+          { t: 'Let them mistake your patience for weakness. The misjudgment of an opponent is a gift you should never refuse.', a: 'AFTER SIMA YI' },
+          { t: 'Victory is not the loudest moment in the room. It is the last name still standing when the noise has gone.', a: 'GRAND HORIZON' },
+          { t: 'The river does not argue with the rock. It simply outlasts it, and in time the rock is sand.', a: 'ON ENDURANCE' },
+          { t: 'Govern the small fire of your temper and you will never have to fight the large fire of your regret.', a: 'COMPOSURE DOCTRINE' },
+          { t: 'What humiliates you today is the fuel you will burn tomorrow. Swallow it whole, and let it work.', a: 'AFTER GOU JIAN' },
+          { t: 'Measure every insult against the span of your whole life. At that scale, almost nothing keeps its weight.', a: 'THE MACRO-TIMELINE' },
+          { t: 'The composed man is not the one who feels nothing. He is the one who decides, alone, what to do with what he feels.', a: 'MASTER OF COMPOSURE' },
+          { t: 'Speak last. Move slow. Let the impatient reveal their hand while you reveal nothing at all.', a: 'THE SILENT STRATEGIST' },
+          { t: 'A decade of preparation is invisible until the single hour it makes inevitable.', a: 'GRAND HORIZON' },
+        ],
+
+        challengeDefs: [
+          { id: 'silence', name: 'The Silence Vow', desc: 'Speak only when speech sharpens the outcome. Let one urge to comment pass untouched.', xp: 25 },
+          { id: 'posture', name: 'Unflinching Posture', desc: 'Meet one provocation today with a still face and a steady spine. Give it nothing.', xp: 20 },
+          { id: 'delay', name: 'Delayed Response', desc: 'Let one charged notification sit thirty minutes before you reply to it.', xp: 20 },
+          { id: 'gall', name: 'Taste the Gall', desc: 'Recall one past humiliation on purpose, without flinching. Convert it to resolve.', xp: 30 },
+          { id: 'cold', name: 'The Cold Vow', desc: 'Choose discomfort once today — cold water, the harder path, the unglamorous task.', xp: 20 },
+          { id: 'ledger', name: 'The Unspoken Ledger', desc: 'Absorb one slight in silence and log it here, rather than avenge it now.', xp: 25 },
+          { id: 'horizon', name: 'Macro Survey', desc: 'Spend five minutes viewing today from a ten-year distance. Note what survives the view.', xp: 15 },
+        ],
+
+        // ---------- lifecycle ----------
+        init() {
+          this.today = this.todayKey();
+          // streak break: a missed day resets the vow
+          if (this.lastActiveDay && this.dayDiff(this.lastActiveDay, this.today) > 1) {
+            this.streak = 0;
+          }
+          // daily quote rotation (user can still advance manually)
+          if (this.lastQuoteDay !== this.today) {
+            this.quoteIndex = this.dayOfYear() % this.quotes.length;
+            this.lastQuoteDay = this.today;
+          }
+          if (this.quoteIndex >= this.quotes.length) this.quoteIndex = 0;
+          // bound storage: drop challenge log entries older than 120 days
+          const keep = {};
+          Object.keys(this.done).forEach((k) => {
+            const dk = k.split('|')[0];
+            if (this.dayDiff(dk, this.today) <= 120) keep[k] = this.done[k];
+          });
+          this.done = keep;
+          // keep `today` fresh across a midnight rollover while the app stays open
+          setInterval(() => this.refreshDay(), 60000);
+          document.addEventListener('visibilitychange', () => { if (!document.hidden) this.refreshDay(); });
+          window.addEventListener('focus', () => this.refreshDay());
+        },
+        refreshDay() {
+          const t = this.todayKey();
+          if (t === this.today) return;
+          if (this.lastActiveDay && this.dayDiff(this.lastActiveDay, t) > 1) this.streak = 0;
+          this.today = t; // reactive — isDone()/doneToday recompute against the new day
+        },
+
+        // ---------- date helpers ----------
+        todayKey() {
+          const d = new Date();
+          return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        },
+        dayDiff(a, b) {
+          return Math.round((Date.parse(b + 'T00:00:00') - Date.parse(a + 'T00:00:00')) / 86400000);
+        },
+        dayOfYear() {
+          const d = new Date();
+          const start = new Date(d.getFullYear(), 0, 0);
+          return Math.floor((d - start) / 86400000);
+        },
+        hash(s) {
+          let h = 2166136261;
+          for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+          return h >>> 0;
+        },
+
+        // ---------- rank / points ----------
+        get rank() {
+          let lvl = 1, need = 100, acc = 0;
+          while (this.egoPoints >= acc + need) { acc += need; lvl++; need = Math.round(need * 1.35); }
+          const into = this.egoPoints - acc;
+          const pct = Math.min(100, Math.round((into / need) * 100));
+          return { level: lvl, into, need, pct, title: this.titleForLevel(lvl) };
+        },
+        titleForLevel(l) {
+          const t = ['Restless Reactor', 'Stilling Mind', 'Patient Student', 'Composed Tactician', 'Silent Strategist', 'Keeper of the Long Game', 'Sovereign of Stillness', 'Grand Horizon Ascendant'];
+          return t[Math.min(l - 1, t.length - 1)];
+        },
+        addPoints(n, reason) {
+          const before = this.rank.level;
+          this.egoPoints = Math.max(0, this.egoPoints + n);
+          if (n > 0) this.toast('+' + n + ' Sovereignty', reason || '');
+          const after = this.rank.level;
+          if (after > before) {
+            setTimeout(() => this.toast('◆ RANK ASCENDED', this.titleForLevel(after)), 360);
+          }
+        },
+
+        // ---------- toast ----------
+        toast(msg, sub) {
+          const id = ++this._tid;
+          this.toasts.push({ id, msg, sub });
+          setTimeout(() => { this.toasts = this.toasts.filter((t) => t.id !== id); }, 2600);
+        },
+
+        // ---------- navigation ----------
+        go(tab) { this.activeTab = tab; },
+        tabCls(tab) { return this.activeTab === tab ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'; },
+
+        // ---------- quotes ----------
+        nextQuote() { this.quoteIndex = (this.quoteIndex + 1) % this.quotes.length; },
+
+        // ---------- tactical pause ----------
+        startPause() {
+          if (this.pauseActive) return;
+          const self = this;
+          this.pauseActive = true;
+          this.pauseProgress = 0;
+          this.pauseRemaining = 10;
+          this.pausePhase = 'Inhale';
+          try {
+            const C = window.AudioContext || window.webkitAudioContext;
+            if (C) { self._actx = self._actx || new C(); if (self._actx.state === 'suspended') self._actx.resume(); }
+          } catch (e) {}
+          const total = 10000;
+          const start = performance.now();
+          const tick = (now) => {
+            const el = now - start;
+            self.pauseProgress = Math.min(el / total, 1);
+            self.pauseRemaining = Math.max(0, Math.ceil((total - el) / 1000));
+            const c = (el % 4500) / 4500;
+            self.pausePhase = c < 0.5 ? 'Inhale' : 'Exhale';
+            if (el < total) { self._raf = requestAnimationFrame(tick); }
+            else { self.completePause(); }
+          };
+          self._raf = requestAnimationFrame(tick);
+        },
+        completePause() {
+          cancelAnimationFrame(this._raf);
+          this.pauseProgress = 1;
+          this.pauseRemaining = 0;
+          this.pausePhase = 'Release';
+          this.pausesCompleted = (this.pausesCompleted || 0) + 1;
+          this.markDay(); // a held pause is a daily act of discipline — it sustains the vow
+          this.playChime();
+          this.buzz();
+          this.pauseFlash = true;
+          setTimeout(() => { this.pauseFlash = false; }, 720);
+          this.addPoints(25, 'Tactical Pause Held');
+          setTimeout(() => { this.pauseActive = false; }, 950);
+        },
+        cancelPause() {
+          cancelAnimationFrame(this._raf);
+          this.pauseActive = false;
+          this.pauseProgress = 0;
+          this.pauseRemaining = 10;
+        },
+        playChime() {
+          try {
+            const C = window.AudioContext || window.webkitAudioContext;
+            if (!C) return;
+            this._actx = this._actx || new C();
+            const ctx = this._actx;
+            if (ctx.state === 'suspended') ctx.resume();
+            const now = ctx.currentTime;
+            [528, 660, 792].forEach((f, i) => {
+              const o = ctx.createOscillator();
+              const g = ctx.createGain();
+              o.type = 'sine';
+              o.frequency.value = f;
+              const peak = 0.16 / (i + 1);
+              g.gain.setValueAtTime(0.0001, now);
+              g.gain.linearRampToValueAtTime(peak, now + 0.03);
+              g.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+              o.connect(g); g.connect(ctx.destination);
+              o.start(now); o.stop(now + 1.9);
+            });
+          } catch (e) {}
+        },
+        buzz() { try { if (navigator.vibrate) navigator.vibrate([22, 36, 22, 36, 60]); } catch (e) {} },
+        buzzShort() { try { if (navigator.vibrate) navigator.vibrate(16); } catch (e) {} },
+
+        // ---------- challenges ----------
+        isDone(id) { return !!this.done[this.today + '|' + id]; },
+        get doneToday() { return this.challengeDefs.filter((c) => this.isDone(c.id)).length; },
+        toggleChallenge(id) {
+          this.refreshDay();
+          const def = this.challengeDefs.find((c) => c.id === id);
+          if (!def) return;
+          const key = this.today + '|' + id;
+          const d = { ...this.done };
+          if (d[key]) {
+            delete d[key];
+            this.done = d;
+            this.egoPoints = Math.max(0, this.egoPoints - def.xp);
+            this.toast('−' + def.xp + ' Sovereignty', 'Trial released');
+          } else {
+            d[key] = true;
+            this.done = d;
+            this.markDay();
+            this.buzzShort();
+            this.addPoints(def.xp, def.name);
+          }
+        },
+        markDay() {
+          const t = this.today;
+          if (this.lastActiveDay === t) return;
+          const diff = this.lastActiveDay ? this.dayDiff(this.lastActiveDay, t) : null;
+          if (diff === 1) this.streak += 1; else this.streak = 1;
+          this.lastActiveDay = t;
+          if (this.streak > this.bestStreak) this.bestStreak = this.streak;
+        },
+
+        // ---------- alchemy transformer ----------
+        runAlchemy() {
+          const input = this.alchemyInput.trim();
+          if (!input || this.terminalRunning) return;
+          const res = this.analyze(input);
+          this.alchemyResult = res;
+          this.alchemySealed = false;
+          this._typeLines(res.lines);
+        },
+        clearAlchemy() {
+          clearTimeout(this._typeT);
+          this.terminalRunning = false;
+          this.alchemyInput = '';
+          this.terminalLines = [];
+          this.alchemyResult = null;
+          this.alchemySealed = false;
+        },
+        _typeLines(lines) {
+          clearTimeout(this._typeT);
+          const self = this;
+          const out = [];
+          let li = 0, ci = 0;
+          self.terminalRunning = true;
+          self.terminalLines = [];
+          const step = () => {
+            if (li >= lines.length) {
+              self.terminalRunning = false;
+              self.afterAlchemy();
+              return;
+            }
+            const full = lines[li];
+            out[li] = full.slice(0, ci + 1);
+            self.terminalLines = out.slice();
+            ci++;
+            if (ci >= full.length) {
+              li++; ci = 0;
+              self._typeT = setTimeout(step, full.length === 0 ? 24 : 64);
+            } else {
+              self._typeT = setTimeout(step, 9);
+            }
+          };
+          step();
+        },
+        afterAlchemy() {
+          this.addPoints(12, 'Detachment Protocol Run');
+        },
+        analyze(text) {
+          const raw = text.trim();
+          const t = raw.toLowerCase();
+          const cats = [
+            { key: 'corporate', label: 'CORPORATE THEATER', words: ['boss', 'manager', 'fired', 'coworker', 'colleague', 'work', 'promotion', 'salary', 'raise', 'meeting', 'deadline', 'email', 'office', 'client', 'project', 'quota', 'layoff', ' hr ', 'interview', 'job', 'career', 'team', 'company'] },
+            { key: 'interpersonal', label: 'INTERPERSONAL VOLATILITY', words: ['insult', 'disrespect', 'friend', 'betray', 'rude', 'lied', 'lie', 'gossip', 'family', 'partner', 'spouse', 'rumor', 'rumour', 'backstab', 'blocked', 'text', 'message', 'cheat', 'ex '] },
+            { key: 'status', label: 'STATUS / EGO EXPOSURE', words: ['credit', 'praise', 'recognition', 'jealous', 'embarrass', 'humiliat', 'overlooked', 'underestimat', 'mocked', 'laughed', 'dismissed', 'snub', 'ignored', 'exposed', 'fool', 'loser', 'wrong', 'stupid'] },
+          ];
+          // Leading word-boundary match: prevents 'lie' matching inside 'believe'
+          // while still allowing stem matches (e.g. 'humiliat' -> 'humiliated').
+          const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          cats.forEach((c) => {
+            c.hits = 0;
+            c.found = [];
+            c.words.forEach((w) => {
+              const m = t.match(new RegExp('\\b' + esc(w), 'g'));
+              if (m && m.length) { c.hits += m.length; c.found.push(w.trim()); }
+            });
+          });
+          let dom = cats.reduce((a, b) => (b.hits > a.hits ? b : a), cats[0]);
+          if (!dom.hits) dom = { key: 'ambient', label: 'AMBIENT NOISE', hits: 0, found: [] };
+
+          const seed = this.hash(raw || 'x');
+          const intense = ['hate', 'furious', 'angry', 'rage', 'livid', 'seething', 'disgust', 'humiliat', 'betray', 'idiot', 'stupid', 'never', 'always', 'ruin', 'destroy', 'unfair', 'worst', "can't", 'cant', 'sick of', 'done with', 'screw', 'pathetic', 'hate them'];
+          let ihits = 0;
+          intense.forEach((w) => { if (t.includes(w)) ihits++; });
+          const excl = (raw.match(/!/g) || []).length;
+          const letters = (raw.match(/[a-zA-Z]/g) || []).length;
+          const caps = (raw.match(/[A-Z]/g) || []).length;
+          const capsRatio = letters ? caps / letters : 0;
+
+          let vol = 22 + ihits * 9 + excl * 5 + Math.round(capsRatio * 40) + dom.hits * 3;
+          vol = Math.max(6, Math.min(98, vol));
+          const filled = Math.max(0, Math.min(10, Math.round(vol / 10)));
+          const bar = '█'.repeat(filled) + '░'.repeat(10 - filled);
+
+          const threatMap = {
+            corporate: 'STRUCTURAL · NON-EXISTENTIAL',
+            interpersonal: 'RELATIONAL · NON-EXISTENTIAL',
+            status: 'REPUTATIONAL · RECOVERABLE',
+            ambient: 'NEGLIGIBLE · SELF-RESOLVING',
+          };
+          const latency = vol < 28 ? '6 HOURS' : vol < 52 ? '24 HOURS' : vol < 74 ? '72 HOURS' : '7 DAYS';
+          const decayWindow = vol > 70 ? '30 DAYS' : vol > 42 ? '21 DAYS' : '14 DAYS';
+          const decayPct = Math.min(99, 99 - Math.round(vol / 12));
+
+          const PARA = {
+            corporate: [
+              'The actors in this scene are pieces on a board, not arbiters of your worth. Their moves are positional, never personal.',
+              'Hierarchies reward those who appear unbothered. A visible reaction is data you hand a rival for free.',
+              'Titles, pay, and approval are levers others pull to steer you. Seeing the lever is the first step to dissolving its pull.',
+              'This will not appear on the org chart of your life in five years. Assign it the weight the long record will: minimal.',
+            ],
+            interpersonal: [
+              'What reads as an attack is almost always the other party managing their own discomfort, projected outward onto you.',
+              'A bond that survives only your silence was never load-bearing. Note precisely who needs your reaction to feel real.',
+              'Words spoken in heat have a half-life of hours. A reply sent in heat can outlive the offense by years.',
+              'You were handed a provocation, not an obligation. Receipt does not require response.',
+            ],
+            status: [
+              'The sting is the gap between how you were seen and how you wished to be seen. Close it by needing the audience less.',
+              'Being underestimated is a tactical asset. An opponent who dismisses you will never trouble himself to defend against you.',
+              'Recognition withheld today is leverage retained for tomorrow. The unseen player chooses the hour of his arrival.',
+              'Embarrassment is a private weather system mistaken for a public verdict. The crowd has already forgotten.',
+            ],
+            ambient: [
+              'No discrete external threat detected. The disturbance is internal weather, not an advancing front.',
+              'The mind manufactures urgency where none exists. Observed without reaction, the signal decays on its own.',
+              'This will not survive in any honest account of your life ten years on. Treat it with the weight history will assign: none.',
+              'Stillness is not absence of action. Against noise, stillness is the action.',
+            ],
+          };
+          const DIR = {
+            corporate: [
+              'Withhold all reaction in shared channels for the full latency window.',
+              'Document the facts privately. Let the record — not your temper — carry the argument.',
+              'Advance one concrete objective unrelated to this trigger before you respond to it.',
+              'Assume the other party is improvising. Do not dignify improvisation with strategy.',
+            ],
+            interpersonal: [
+              'Send no message while the volatility index sits above 40.',
+              'Mirror neutrality. Deny the provocation the reaction it was engineered to extract.',
+              'Re-read the trigger in 24 hours and respond only to what still reads as true.',
+              'Decide what this relationship is worth in calm, never in heat.',
+            ],
+            status: [
+              'Convert the slight to fuel: name one capability you will quietly compound this week.',
+              'Decline the invitation to defend yourself. To every observer, silence reads as strength.',
+              'Let the underestimation stand unanswered. Unanswered, it becomes your cover.',
+              'Separate the event from the audience. Most of the audience is imaginary.',
+            ],
+            ambient: [
+              'Run a 10-second tactical pause and re-assess from the far side of it.',
+              'Take no action. The optimal move against noise is measured stillness.',
+              'Redirect the freed energy into a single act of preparation.',
+              'Name the feeling, set a timer, and let it expire unfed.',
+            ],
+          };
+          const SUM = {
+            corporate: ['A positional move on a board you still control.', 'Office theater, mistaken for a verdict on your worth.', 'A lever someone pulled, now visible and powerless.'],
+            interpersonal: ['Another party managing their discomfort at your expense.', 'A heated signal with a half-life of hours.', 'A provocation received, an obligation declined.'],
+            status: ['A gap between perception and reality — already closing.', 'An underestimation quietly repurposed as cover.', 'Private weather mistaken for a public verdict.'],
+            ambient: ['Internal weather. No external front.', 'Manufactured urgency, left to decay unfed.', 'Noise. Answered, correctly, with stillness.'],
+          };
+
+          const pool = PARA[dom.key];
+          const p1 = pool[seed % pool.length];
+          const p2 = pool[(seed + 1) % pool.length];
+          const dpool = DIR[dom.key];
+          const d1 = dpool[seed % dpool.length];
+          const d2 = dpool[(seed + 2) % dpool.length];
+          const spool = SUM[dom.key];
+          const summary = spool[seed % spool.length];
+
+          const lines = [
+            '> INITIATING DETACHMENT PROTOCOL v3.1',
+            '> INPUT RECEIVED [' + raw.length + ' CHARS] ...... OK',
+            '> SCANNING EMOTIONAL PAYLOAD ......... DONE',
+            '> DOMINANT VECTOR ... ' + dom.label,
+            '> VOLATILITY INDEX .. ' + vol + '/100',
+            '  [' + bar + ']',
+            '> THREAT CLASS ...... ' + threatMap[dom.key],
+            '> MARKERS DETECTED .. ' + ((dom.found && dom.found.length) ? dom.found.slice(0, 6).join(', ').toUpperCase() : 'NONE — INTERNAL ORIGIN'),
+            '> EGO CONTENT ....... STRIPPED',
+            '',
+            '>> STRATEGIC READOUT',
+            '   ' + p1,
+            '   ' + p2,
+            '',
+            '>> DIRECTIVES',
+            '   [01] ' + d1,
+            '   [02] ' + d2,
+            '   [03] Hold the long horizon. The patient inherit the field.',
+            '',
+            '> RESPONSE LATENCY .. ' + latency,
+            '> PROJECTED DECAY ... ' + decayPct + '% IRRELEVANT / ' + decayWindow,
+            '> STATUS ............ COMPOSURE MAINTAINED ✓',
+          ];
+
+          return { key: dom.key, label: dom.label, vol, bar, threat: threatMap[dom.key], latency, decayPct, window: decayWindow, lines, raw, summary };
+        },
+        lineClass(line) {
+          if (line.startsWith('>>')) return 'text-amber-400 font-bold';
+          if (line.startsWith('   [0')) return 'text-amber-300';
+          if (line.startsWith('  [')) return 'text-amber-500/80';
+          if (line.startsWith('   ')) return 'text-slate-300';
+          if (line.startsWith('>')) return 'text-emerald-300/80';
+          return 'text-slate-400';
+        },
+
+        // ---------- retrospective / archive ----------
+        sealRecord() {
+          const r = this.alchemyResult;
+          if (!r || this.alchemySealed) return;
+          const entry = {
+            id: 'r' + (++this.idSeq) + '-' + this.hash(r.raw + this.today + this.retrospective.length).toString(16),
+            date: this.today,
+            key: r.key,
+            label: r.label,
+            vol: r.vol,
+            latency: r.latency,
+            raw: r.raw,
+            summary: r.summary,
+          };
+          this.retrospective = [...this.retrospective, entry];
+          this.alchemySealed = true;
+          this.addPoints(8, 'Record Sealed');
+        },
+        get archiveSorted() { return this.retrospective.slice().reverse(); },
+        toggleRaw(id) { this.openRaw = { ...this.openRaw, [id]: !this.openRaw[id] }; },
+        removeRecord(id) {
+          this.retrospective = this.retrospective.filter((e) => e.id !== id);
+          const o = { ...this.openRaw }; delete o[id]; this.openRaw = o;
+        },
+        purgeAll() {
+          if (window.confirm('Purge all sealed records? This cannot be undone.')) {
+            this.retrospective = [];
+            this.openRaw = {};
+          }
+        },
+        badgeClass(key) {
+          return {
+            corporate: 'bg-sky-500/10 text-sky-300/90',
+            interpersonal: 'bg-rose-500/10 text-rose-300/90',
+            status: 'bg-amber-500/10 text-amber-300/90',
+            ambient: 'bg-slate-500/10 text-slate-300/90',
+          }[key] || 'bg-slate-500/10 text-slate-300/90';
+        },
+        daysAgoLabel(date) {
+          const d = this.dayDiff(date, this.today);
+          if (d <= 0) return 'TODAY';
+          if (d === 1) return 'YESTERDAY';
+          return d + ' DAYS AGO';
+        },
+        perspective(date) {
+          const d = this.dayDiff(date, this.today);
+          if (d <= 0) return 'Still warm. Let it cool before you judge its size.';
+          if (d < 7) return 'Already shrinking. Notice how much heat has left it.';
+          if (d < 30) return 'Barely registers now — a pebble where a boulder seemed to stand.';
+          return 'Invisible from the long horizon, exactly as the protocol predicted.';
+        },
+      }));
+    });
+
+    // ---- inline PWA manifest + icons (single-file, no external assets) ----
+    (function () {
+      var ico = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
+        + "<rect width='64' height='64' rx='14' fill='%23020617'/>"
+        + "<circle cx='32' cy='39' r='9' fill='%23f59e0b'/>"
+        + "<path d='M8 45 H56' stroke='%23f59e0b' stroke-width='3' stroke-linecap='round'/>"
+        + "<path d='M15 53 H49' stroke='%23475569' stroke-width='2' stroke-linecap='round'/>"
+        + "</svg>";
+      var icoUri = 'data:image/svg+xml,' + ico;
+      var fav = document.getElementById('favicon');
+      var apple = document.getElementById('appleicon');
+      if (fav) fav.href = icoUri;
+      if (apple) apple.href = icoUri;
+      try {
+        var manifest = {
+          name: 'Grand Horizon: Master of Composure',
+          short_name: 'Grand Horizon',
+          description: 'A tactical psychological utility for strategic patience and emotional composure.',
+          display: 'standalone',
+          orientation: 'portrait',
+          background_color: '#020617',
+          theme_color: '#020617',
+          start_url: '.',
+          scope: '.',
+          icons: [{ src: icoUri, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+        };
+        var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+        var link = document.getElementById('manifest');
+        if (link) link.href = URL.createObjectURL(blob);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Alpine plugins must load BEFORE Alpine core; both deferred to preserve order -->
+  <script defer src="https://unpkg.com/@alpinejs/persist@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://unpkg.com/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+
+  <noscript>
+    <div style="max-width:28rem;margin:4rem auto;padding:2rem;text-align:center;color:#94a3b8;font-family:system-ui;">
+      <h1 style="color:#f59e0b;">Grand Horizon</h1>
+      <p>This tactical utility requires JavaScript. Enable it to command your composure.</p>
+    </div>
+  </noscript>
+</body>
+</html>
