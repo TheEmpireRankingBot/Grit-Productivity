@@ -1,6 +1,6 @@
 // Grand Horizon service worker — makes the app installable and offline-capable.
 // Bump CACHE when shell assets change to force an update on next visit.
-const CACHE = 'grand-horizon-v1';
+const CACHE = 'grand-horizon-v2';
 const RUNTIME = 'grand-horizon-runtime';
 const SHELL = [
   './',

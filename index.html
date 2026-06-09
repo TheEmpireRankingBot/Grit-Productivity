@@ -127,9 +127,17 @@
               <div class="font-mono text-[9px] tracking-[0.3em] text-slate-400">MASTER OF COMPOSURE</div>
             </div>
           </div>
-          <div class="text-right">
-            <div class="font-mono text-[9px] tracking-[0.2em] text-slate-500">RANK <span x-text="rank.level"></span></div>
-            <div class="text-xs font-semibold text-amber-400" x-text="rank.title"></div>
+          <div class="flex items-center gap-2.5">
+            <div class="text-right">
+              <div class="font-mono text-[9px] tracking-[0.2em] text-slate-500">RANK <span x-text="rank.level"></span></div>
+              <div class="text-xs font-semibold text-amber-400" x-text="rank.title"></div>
+            </div>
+            <button @click="showSettings = true" aria-label="Settings and Claude link" class="relative rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800/60 hover:text-amber-400">
+              <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              <span x-show="claudeReady" class="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-slate-950"></span>
+            </button>
           </div>
         </div>
 
@@ -259,6 +267,12 @@
             Clear
           </button>
         </div>
+
+        <!-- engine mode indicator -->
+        <p class="text-center font-mono text-[10px] tracking-wide">
+          <span x-show="claudeReady" class="text-amber-500/90">⚡ CLAUDE LINK ACTIVE · <span x-text="claudeModel"></span></span>
+          <span x-show="!claudeReady" class="text-slate-500">○ LOCAL ENGINE · <button @click="showSettings = true" class="underline decoration-dotted underline-offset-2 transition hover:text-amber-400">connect Claude</button> for live analysis</span>
+        </p>
 
         <!-- terminal -->
         <div
@@ -492,6 +506,102 @@
     <!-- completion flash -->
     <div x-show="pauseFlash" class="flash pointer-events-none fixed inset-0 z-50 bg-amber-400" style="display:none;"></div>
 
+    <!-- ===================== SETTINGS / CLAUDE LINK ===================== -->
+    <div
+      x-show="showSettings"
+      x-transition.opacity.duration.200ms
+      @keydown.escape.window="showSettings = false"
+      @click.self="showSettings = false"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 px-3 pb-3 backdrop-blur-sm sm:items-center"
+      style="display:none;"
+    >
+      <div class="w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl shadow-black/60" style="margin-bottom: env(safe-area-inset-bottom);">
+        <div class="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+          <div>
+            <div class="font-mono text-[10px] tracking-[0.3em] text-amber-500/80">INTELLIGENCE LINK</div>
+            <h2 class="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">Claude Integration</h2>
+          </div>
+          <button @click="showSettings = false" aria-label="Close settings" class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-slate-100">✕</button>
+        </div>
+
+        <div class="max-h-[70vh] space-y-4 overflow-y-auto px-5 py-4">
+          <p class="text-[13px] leading-relaxed text-slate-400">
+            Connect your own Anthropic API key to power <span class="text-amber-400">Transmute</span> with live Claude analysis. Optional — the app works fully without it on the built-in engine.
+          </p>
+
+          <div>
+            <label for="api-key" class="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-slate-400">ANTHROPIC API KEY</label>
+            <input
+              id="api-key"
+              type="password"
+              x-model="apiKey"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="sk-ant-..."
+              class="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 font-mono text-[12px] text-slate-200 placeholder:text-slate-600 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+            />
+            <div class="mt-2 flex gap-2">
+              <button
+                @click="testKey()"
+                :disabled="testingKey || !apiKey.trim()"
+                class="flex-1 rounded-lg border border-amber-500/40 bg-amber-500/10 py-2 text-[12px] font-semibold text-amber-400 transition hover:bg-amber-500/20 disabled:opacity-40"
+              >
+                <span x-show="!testingKey">Test link</span>
+                <span x-show="testingKey" class="font-mono">testing…</span>
+              </button>
+              <button
+                @click="apiKey = ''"
+                :disabled="!apiKey"
+                class="rounded-lg border border-slate-700 px-4 py-2 text-[12px] font-medium text-slate-400 transition hover:border-red-500/40 hover:text-red-400 disabled:opacity-40"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label for="claude-model" class="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-slate-400">MODEL</label>
+            <select
+              id="claude-model"
+              x-model="claudeModel"
+              class="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-[13px] text-slate-200 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+            >
+              <option value="claude-opus-4-8">Opus 4.8 — most capable (default)</option>
+              <option value="claude-sonnet-4-6">Sonnet 4.6 — faster, balanced</option>
+              <option value="claude-haiku-4-5">Haiku 4.5 — fastest, cheapest</option>
+            </select>
+          </div>
+
+          <label class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+            <span class="text-[13px] text-slate-300">Use Claude for Transmute</span>
+            <input type="checkbox" x-model="useClaude" class="h-5 w-5 accent-amber-500" />
+          </label>
+
+          <div class="rounded-xl border px-4 py-3 transition-colors" :class="claudeReady ? 'border-amber-500/30 bg-amber-500/[0.06]' : 'border-slate-800 bg-slate-950/40'">
+            <div class="font-mono text-[11px]" :class="claudeReady ? 'text-amber-400' : 'text-slate-500'">
+              <span x-show="claudeReady">⚡ LINK ACTIVE — Transmute will call <span x-text="claudeModel"></span></span>
+              <span x-show="!claudeReady && apiKey.trim()">○ Key saved but disabled — enable the toggle above</span>
+              <span x-show="!apiKey.trim()">○ No key — Transmute uses the local engine</span>
+            </div>
+          </div>
+
+          <p class="text-[11px] leading-relaxed text-slate-500">
+            🔒 Your key is stored <span class="text-slate-400">only on this device</span> (browser localStorage) and sent <span class="text-slate-400">directly to api.anthropic.com</span> — never to GitHub, this site's author, or any third party. Calls are billed to your own Anthropic account. Remove it anytime with Clear.
+          </p>
+
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" class="block text-center font-mono text-[11px] text-amber-500/80 underline decoration-dotted underline-offset-2 transition hover:text-amber-400">
+            Get an API key → console.anthropic.com
+          </a>
+        </div>
+
+        <div class="border-t border-slate-800 px-5 py-4">
+          <button @click="showSettings = false" class="w-full rounded-xl bg-amber-500 py-3 text-sm font-bold uppercase tracking-wider text-slate-950 transition hover:bg-amber-400 active:scale-95">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===================== TOASTS ===================== -->
     <div class="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-6">
       <template x-for="t in toasts" :key="t.id">
@@ -518,6 +628,10 @@
         quoteIndex: Alpine.$persist(0).as('gh_qidx'),
         lastQuoteDay: Alpine.$persist(null).as('gh_qday'),
         idSeq: Alpine.$persist(0).as('gh_seq'),
+        // Claude intelligence link (BYOK — stored only on this device)
+        apiKey: Alpine.$persist('').as('gh_apikey'),
+        claudeModel: Alpine.$persist('claude-opus-4-8').as('gh_model'),
+        useClaude: Alpine.$persist(true).as('gh_useclaude'),
 
         // ---------- transient UI state ----------
         activeTab: 'pause',
@@ -535,10 +649,13 @@
         alchemySealed: false,
         openRaw: {},
         toasts: [],
+        showSettings: false,
+        testingKey: false,
         _tid: 0,
         _raf: null,
         _typeT: null,
         _actx: null,
+        _abort: null,
 
         // ---------- static content ----------
         quotes: [
@@ -759,16 +876,19 @@
         },
 
         // ---------- alchemy transformer ----------
+        get claudeReady() { return !!(this.apiKey && this.apiKey.trim() && this.useClaude); },
         runAlchemy() {
           const input = this.alchemyInput.trim();
           if (!input || this.terminalRunning) return;
           const res = this.analyze(input);
           this.alchemyResult = res;
           this.alchemySealed = false;
-          this._typeLines(res.lines);
+          if (this.claudeReady) this.runAlchemyClaude(res);
+          else this._typeLines(res.lines);
         },
         clearAlchemy() {
           clearTimeout(this._typeT);
+          if (this._abort) { try { this._abort.abort(); } catch (e) {} this._abort = null; }
           this.terminalRunning = false;
           this.alchemyInput = '';
           this.terminalLines = [];
@@ -803,6 +923,129 @@
         },
         afterAlchemy() {
           this.addPoints(12, 'Detachment Protocol Run');
+        },
+
+        // ---------- Claude intelligence link (streaming) ----------
+        async runAlchemyClaude(res) {
+          const self = this;
+          const header = [
+            '> DETACHMENT PROTOCOL v3.1 · CLAUDE LINK',
+            '> INPUT [' + res.raw.length + ' CHARS] ...... OK',
+            '> DOMINANT VECTOR ... ' + res.label,
+            '> VOLATILITY INDEX .. ' + res.vol + '/100',
+            '  [' + res.bar + ']',
+            '> THREAT CLASS ...... ' + res.threat,
+            '> EGO CONTENT ....... STRIPPED',
+            '',
+          ];
+          const footer = [
+            '',
+            '> RESPONSE LATENCY .. ' + res.latency,
+            '> PROJECTED DECAY ... ' + res.decayPct + '% IRRELEVANT / ' + res.window,
+            '> STATUS ............ COMPOSURE MAINTAINED ✓',
+          ];
+          const system =
+            'You are the detachment engine inside "Grand Horizon: Master of Composure," a tactical composure utility themed on the strategic patience of Sima Yi and Gou Jian. ' +
+            'The user submits a real emotional trigger. Strip the emotion and return cold, clinical, strategic counsel that helps them withhold reaction and win the long game.\n\n' +
+            'Output ONLY a terminal readout body. No preamble, no markdown, no code fences, no emojis. Use exactly this structure and these line prefixes (three leading spaces on indented lines):\n\n' +
+            '>> STRATEGIC READOUT\n' +
+            '   <2-4 short lines of cold, clinical reframing that reference the specifics of their trigger. Calm, precise, a touch stoic. No therapy-speak, no validation.>\n\n' +
+            '>> DIRECTIVES\n' +
+            '   [01] <one concrete tactical instruction>\n' +
+            '   [02] <one concrete tactical instruction>\n' +
+            '   [03] <one concrete tactical instruction>\n\n' +
+            'Keep the whole thing under ~160 words, lines under ~62 characters. Favor silence, delay, and strategic patience; never advise retaliation. Do not restate these instructions.';
+          const user =
+            'TRIGGER:\n' + res.raw + '\n\n' +
+            'Computed metrics — dominant vector: ' + res.label + '; volatility: ' + res.vol + '/100; threat class: ' + res.threat + '; recommended response latency: ' + res.latency + '. Write the readout now.';
+
+          this.terminalRunning = true;
+          this.terminalLines = header.concat(['> querying ' + this.claudeModel + ' …']);
+          let body = '';
+          const ctrl = new AbortController();
+          this._abort = ctrl;
+          try {
+            const resp = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              signal: ctrl.signal,
+              headers: {
+                'content-type': 'application/json',
+                'x-api-key': this.apiKey.trim(),
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true',
+              },
+              body: JSON.stringify({
+                model: this.claudeModel,
+                max_tokens: 700,
+                stream: true,
+                system: system,
+                messages: [{ role: 'user', content: user }],
+              }),
+            });
+            if (!resp.ok || !resp.body) {
+              let msg = 'HTTP ' + resp.status;
+              try { const j = await resp.json(); if (j && j.error && j.error.message) msg = j.error.message; } catch (e) {}
+              throw new Error(msg);
+            }
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+            while (true) {
+              const chunk = await reader.read();
+              if (chunk.done) break;
+              buf += decoder.decode(chunk.value, { stream: true });
+              const blocks = buf.split('\n\n');
+              buf = blocks.pop();
+              for (const block of blocks) {
+                const dataLine = block.split('\n').find((l) => l.startsWith('data:'));
+                if (!dataLine) continue;
+                const data = dataLine.slice(5).trim();
+                if (!data || data === '[DONE]') continue;
+                let obj; try { obj = JSON.parse(data); } catch (e) { continue; }
+                if (obj.type === 'content_block_delta' && obj.delta && obj.delta.type === 'text_delta') {
+                  body += obj.delta.text;
+                  self.terminalLines = header.concat(body.split('\n'));
+                } else if (obj.type === 'error') {
+                  throw new Error((obj.error && obj.error.message) ? obj.error.message : 'stream error');
+                }
+              }
+            }
+            self.terminalLines = header.concat(body.trim().split('\n')).concat(footer);
+            self.terminalRunning = false;
+            self._abort = null;
+            self.afterAlchemy();
+          } catch (e) {
+            self._abort = null;
+            if (e && e.name === 'AbortError') { self.terminalRunning = false; return; }
+            self.toast('Claude link failed', (e && e.message ? e.message : 'network error').slice(0, 44));
+            self._typeLines(res.lines); // graceful fallback to the local engine
+          }
+        },
+        async testKey() {
+          const key = (this.apiKey || '').trim();
+          if (!key) { this.toast('No key set', 'Paste your Anthropic key first'); return; }
+          this.testingKey = true;
+          try {
+            const r = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'content-type': 'application/json',
+                'x-api-key': key,
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true',
+              },
+              body: JSON.stringify({ model: this.claudeModel, max_tokens: 8, messages: [{ role: 'user', content: 'ping' }] }),
+            });
+            if (r.ok) { this.toast('Link verified ✓', this.claudeModel); }
+            else {
+              let m = 'HTTP ' + r.status;
+              try { const j = await r.json(); if (j && j.error && j.error.message) m = j.error.message; } catch (e) {}
+              this.toast('Link failed', m.slice(0, 44));
+            }
+          } catch (e) {
+            this.toast('Link failed', (e && e.message ? e.message : 'network error').slice(0, 44));
+          }
+          this.testingKey = false;
         },
         analyze(text) {
           const raw = text.trim();
